@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>UpscaleHD – Free 1080p Video Upscaler</title>
+  <meta name="description" content="Upscale low-resolution videos to Full HD 1080p for free, with original audio preserved.">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<a class="skip" href="#upscaler">Skip to the upscaler</a>
+<header class="site-header">
+  <a class="brand" href="#home" aria-label="UpscaleHD home">
+    <svg width="28" height="28" viewBox="0 0 32 32" aria-hidden="true"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8b5cf6"/><stop offset="1" stop-color="#3b82f6"/></linearGradient></defs><rect width="32" height="32" rx="8" fill="url(#g)"/><path d="M11 9l12 7-12 7z" fill="#fff"/></svg>
+    <span>Upscale<b>HD</b></span>
+  </a>
+  <nav aria-label="Main"><a href="#home">Home</a><a href="#upscaler">Video Upscaler</a><a href="#how">How It Works</a><a href="#about">About</a></nav>
+</header>
+
+<main>
+<section id="home" class="hero">
+  <h1>Transform Your Videos to <span class="grad">Full HD 1080p</span></h1>
+  <p>Upscale your low-resolution videos with fast video processing and optional AI enhancement. Preserve your original audio and download your converted video for free.</p>
+  <div class="cta"><a class="btn primary" href="#upscaler" id="hero-upload">Upload Video</a><a class="btn ghost" href="#how">Learn More</a></div>
+  <ul class="chips" aria-label="Features">
+    <li>Free conversion</li><li>Up to <span data-max-size>5 GB</span> per video</li><li>Original audio preservation</li><li>Fast processing</li><li>Optional AI enhancement</li>
+  </ul>
+</section>
+
+<section id="upscaler" class="wrap">
+  <h2>Video Upscaler</h2>
+  <div id="banner" class="banner" role="alert" hidden></div>
+
+  <!-- Step 1: upload -->
+  <div class="card" id="upload-card">
+    <div id="dropzone" class="drop" tabindex="0" role="button" aria-label="Choose a video to upload. You can also drag and drop.">
+      <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M12 16V4m0 0l-4 4m4-4l4 4M4 16v3a1 1 0 001 1h14a1 1 0 001-1v-3"/></svg>
+      <p class="big">Drag &amp; drop your video here</p>
+      <p class="muted">or</p>
+      <button class="btn primary" id="select-btn" type="button">Select Video</button>
+      <p class="muted small">Maximum <span data-max-size>5 GB</span> &middot; <span id="formats">MP4, MKV, MOV, AVI, WebM</span></p>
+      <input id="file-input" type="file" accept=".mp4,.mkv,.mov,.avi,.webm,.m4v,video/*" hidden>
+    </div>
+    <div id="upload-progress" hidden>
+      <div class="row between"><strong id="up-name"></strong><span class="muted" id="up-size"></span></div>
+      <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="up-bar"><i></i></div>
+      <div class="row between small muted"><span id="up-text">Uploading…</span><span id="up-speed"></span></div>
+      <button class="btn ghost small" id="up-cancel" type="button">Cancel upload</button>
+    </div>
+  </div>
+
+  <!-- Step 2: info + settings -->
+  <div id="setup" hidden>
+    <div class="card">
+      <h3>Video information</h3>
+      <dl class="grid" id="info-grid"></dl>
+    </div>
+    <div class="card">
+      <h3>Conversion settings</h3>
+      <form id="settings" class="settings" autocomplete="off">
+        <fieldset>
+          <legend>Conversion mode</legend>
+          <label class="opt"><input type="radio" name="mode" value="fast" checked><span><b>Fast Upscaling</b><small>FFmpeg Lanczos resize to 1080p. Quick, but resizing alone cannot recreate missing detail.</small></span></label>
+          <label class="opt" id="ai-opt"><input type="radio" name="mode" value="ai"><span><b>AI Enhancement</b><small id="ai-note">Real-ESRGAN frame enhancement. Much slower; improves perceived detail.</small></span></label>
+        </fieldset>
+        <div class="two">
+          <label>Output resolution<select name="resolution" disabled><option>1080p (Full HD)</option></select></label>
+          <label>Quality<select name="quality"><option value="fast">Fast – quickest</option><option value="balanced" selected>Balanced</option><option value="high">High Quality – slower</option></select></label>
+          <label>Aspect ratio<select name="aspect"><option value="preserve" selected>Preserve (never stretch)</option><option value="pad">Fit with padding (letterbox)</option><option value="crop">Crop to fill</option></select></label>
+          <label>Output format<select name="format"><option value="mp4" selected>MP4 (best compatibility)</option><option value="mkv">MKV (keeps every track)</option></select></label>
+          <label>Encoder<select name="encoder" id="encoder-select"></select></label>
+          <label>Audio<select name="audio" disabled><option>Preserve original audio</option></select></label>
+        </div>
+        <p class="muted small" id="encoder-note"></p>
+        <label class="check"><input type="checkbox" name="allow_audio_reencode"> If MP4 can't hold the original audio codec, re-encode it to AAC instead of switching to MKV</label>
+        <p class="muted small" id="output-note"></p>
+        <div class="row"><button class="btn primary" type="submit" id="convert-btn">Convert to 1080p</button><button class="btn ghost" type="button" id="discard-btn">Choose another video</button></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Step 3: processing -->
+  <div class="card" id="processing" hidden>
+    <h3>Processing</h3>
+    <div class="row between"><strong id="stage">Waiting…</strong><span id="pct" class="grad big">0%</span></div>
+    <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" id="proc-bar"><i></i></div>
+    <div class="stats"><div><span class="muted">Upload</span><b id="s-upload">Complete</b></div><div><span class="muted">Conversion</span><b id="s-conv">0%</b></div><div><span class="muted">Speed</span><b id="s-speed">–</b></div><div><span class="muted">Time remaining</span><b id="s-eta">–</b></div></div>
+    <ul id="notes" class="notes"></ul>
+    <button class="btn danger" id="cancel-job" type="button">Cancel Conversion</button>
+  </div>
+
+  <!-- Step 4: result -->
+  <div class="card" id="result" hidden>
+    <h3>Your 1080p video is ready</h3>
+    <div class="video-wrap"><video id="preview" controls preload="none" playsinline></video></div>
+    <p class="muted small" id="preview-note"></p>
+    <div class="compare" id="compare"></div>
+    <dl class="grid" id="result-grid"></dl>
+    <p class="audio-status" id="audio-status"></p>
+    <ul id="result-notes" class="notes"></ul>
+    <p class="muted small" id="expiry"></p>
+    <div class="row"><a class="btn primary" id="download" href="#" download>Download 1080p Video</a><button class="btn ghost" id="again" type="button">Convert Another Video</button><button class="btn ghost" id="delete-files" type="button">Delete my files</button></div>
+  </div>
+
+  <div class="card error-card" id="failure" hidden>
+    <h3>Something went wrong</h3>
+    <p id="failure-text"></p>
+    <div class="row"><button class="btn primary" id="fallback-btn" type="button" hidden>Retry with Fast Upscaling</button><button class="btn ghost" id="failure-reset" type="button">Start over</button></div>
+  </div>
+</section>
+
+<section id="how" class="wrap">
+  <h2>How It Works</h2>
+  <div class="steps">
+    <div class="card"><b class="num">1</b><h4>Upload</h4><p>Your video is sent in small chunks straight to disk, so even multi-gigabyte files never fill your browser's memory. Interrupted uploads resume automatically.</p></div>
+    <div class="card"><b class="num">2</b><h4>Inspect</h4><p>FFprobe reads the real contents of the file (not just its extension): resolution, frame rate, duration, and every audio track.</p></div>
+    <div class="card"><b class="num">3</b><h4>Convert</h4><p>FFmpeg resizes to 1080p while the audio stream is copied bit-for-bit whenever the container allows it. Hardware encoders are used when available.</p></div>
+    <div class="card"><b class="num">4</b><h4>Download</h4><p>Preview and download the real converted file. It is deleted automatically after the retention period, or immediately when you delete it.</p></div>
+  </div>
+  <div class="card honest"><h4>Resizing vs. AI enhancement</h4><p><b>Fast Upscaling</b> uses a high-quality Lanczos resize. It makes the picture 1920×1080 and keeps edges clean, but it cannot recreate detail that was never recorded. <b>AI Enhancement</b> runs every frame through a neural network (Real-ESRGAN) that can sharpen edges, reduce compression blocks and add plausible detail. It needs a Vulkan-capable GPU, takes much longer, and results depend on the footage. It is entirely optional.</p></div>
+</section>
+
+<section id="about" class="wrap">
+  <h2>About</h2>
+  <div class="card"><p>UpscaleHD is free, open and has no accounts, watermarks, subscriptions or payment walls. Free software is not unlimited hosting, though: the server operator sets the real limits on storage, bandwidth and processing speed. Currently: files up to <b data-max-size>5 GB</b>, converted files kept for <b id="retention">24</b> hours, and conversions processed in a queue. For the fastest results and no upload at all, run UpscaleHD on your own computer (see the README).</p></div>
+</section>
+</main>
+<footer class="foot">UpscaleHD &middot; Free 1080p video upscaler &middot; Processing time depends on video length, hardware and the chosen mode.</footer>
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,23 @@
+.venv/
+**pycache**/
+.env
+*.py[cod]
+*.log
+
+# Video files
+
+*.mp4
+*.mkv
+*.mov
+*.avi
+*.webm
+*.m4v
+
+# Local data and secrets
+
+data/.secret_key
+data/jobs/
+data/uploads/
+data/outputs/
+
+

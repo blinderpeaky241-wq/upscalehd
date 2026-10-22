@@ -1,3 +1,6 @@
+```text
 Flask>=3.0,<4
-waitress>=3.0        # production WSGI server that also works on Windows
-pytest>=8.0          # only needed to run the tests
+gunicorn>=23.0
+waitress>=3.0
+pytest>=8.0
+```
